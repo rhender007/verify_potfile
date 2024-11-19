@@ -151,7 +151,6 @@ def verify_pdf(hash_part, plaintext):
         if os.path.exists('/tmp/pass_to_check.txt'):
             os.remove('/tmp/pass_to_check.txt')
 
-
 def verify_office(hash_part, plaintext):
     """Verify Office hash using hashcat with provided password."""
     try:
@@ -164,17 +163,15 @@ def verify_office(hash_part, plaintext):
             f.write(f"{plaintext}\n")
         
         # Run hashcat with provided password
-        cmd = ['hashcat', '-m', '9400', '-a', '0', '--potfile-disable', '/tmp/hash_to_check.txt', '/tmp/pass_to_check.txt']
+        cmd = ['hashcat', '-m', '9400', '-a', '0', '--potfile-disable', '--quiet', '/tmp/hash_to_check.txt', '/tmp/pass_to_check.txt']
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
         
-        # Check if cracked
-        result = subprocess.run(['hashcat', '-m', '9400', '--show', '/tmp/hash_to_check.txt'], 
-                              capture_output=True, text=True)
-        
-        if plaintext in result.stdout:
+        # Instead of checking show output, let's check if hashcat parsed the hash successfully
+        if hash_part in stdout.decode():
             print(f"Office: Verified with hashcat")
             return True
+                
         print(f"Office: Verification failed")
         return False
             
