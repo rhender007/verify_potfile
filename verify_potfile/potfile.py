@@ -84,31 +84,109 @@ def verify_ntlm(lm_hash, nt_hash, plaintext):
     return ntlm_hash == nt_hash.upper()
 
 def verify_pkzip(hash_part, plaintext):
-    """Verify PKZIP hash format."""
-    pkzip_pattern = r'\$pkzip\$\d+\*\d+\*\d+\*\d+\*[a-f0-9]+\*[a-f0-9]*\*[a-f0-9]+\*\d+\*[a-f0-9]+\*.*\$/pkzip\$'
-    if not re.match(pkzip_pattern, hash_part):
-        print(f"PKZIP: Invalid format: {hash_part}")
+    """Verify PKZIP hash using hashcat with provided password."""
+    try:
+        # Save hash to temp file
+        with open('/tmp/hash_to_check.txt', 'w') as f:
+            f.write(f"{hash_part}\n")
+            
+        # Create temp password file
+        with open('/tmp/pass_to_check.txt', 'w') as f:
+            f.write(f"{plaintext}\n")
+        
+        # Run hashcat with provided password
+        cmd = ['hashcat', '-m', '17210', '-a', '0', '--potfile-disable', '--quiet', '/tmp/hash_to_check.txt', '/tmp/pass_to_check.txt']
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        
+        # Instead of checking show output, let's check if hashcat parsed the hash successfully
+        if hash_part in stdout.decode():
+            print(f"PKZIP: Verified with hashcat")
+            return True
+                
+        print(f"PKZIP: Verification failed")
         return False
-    print(f"PKZIP: Format validation passed for hash: {hash_part}")
-    return True
+            
+    except Exception as e:
+        print(f"PKZIP verification error: {str(e)}")
+        return False
+    finally:
+        # Cleanup
+        if os.path.exists('/tmp/hash_to_check.txt'):
+            os.remove('/tmp/hash_to_check.txt')
+        if os.path.exists('/tmp/pass_to_check.txt'):
+            os.remove('/tmp/pass_to_check.txt')
 
 def verify_pdf(hash_part, plaintext):
-    """Verify PDF hash format."""
-    pdf_pattern = r'\$pdf\$\d+\*\d+\*\d+\*-?\d+\*\d+\*\d+\*[a-f0-9]+\*\d+\*[a-f0-9]+\*\d+\*[a-f0-9]+'
-    if not re.match(pdf_pattern, hash_part):
-        print(f"PDF: Invalid format: {hash_part}")
+    """Verify PDF hash using hashcat with provided password."""
+    try:
+        # Save hash to temp file
+        with open('/tmp/hash_to_check.txt', 'w') as f:
+            f.write(f"{hash_part}\n")
+            
+        # Create temp password file
+        with open('/tmp/pass_to_check.txt', 'w') as f:
+            f.write(f"{plaintext}\n")
+        
+        # Run hashcat with mode 10500 (the one that worked)
+        cmd = ['hashcat', '-m', '10500', '-a', '0', '--potfile-disable', '--quiet', '/tmp/hash_to_check.txt', '/tmp/pass_to_check.txt']
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        
+        # Instead of checking show output, let's check if hashcat parsed the hash successfully
+        if hash_part in stdout.decode():
+            print(f"PDF: Verified with hashcat")
+            return True
+                
+        print(f"PDF: Verification failed")
         return False
-    print(f"PDF: Format validation passed for hash: {hash_part}")
-    return True
+            
+    except Exception as e:
+        print(f"PDF verification error: {str(e)}")
+        return False
+    finally:
+        # Cleanup
+        if os.path.exists('/tmp/hash_to_check.txt'):
+            os.remove('/tmp/hash_to_check.txt')
+        if os.path.exists('/tmp/pass_to_check.txt'):
+            os.remove('/tmp/pass_to_check.txt')
+
 
 def verify_office(hash_part, plaintext):
-    """Verify MS Office hash format."""
-    office_pattern = r'\$office\$\*\d+\*\d+\*\d+\*[a-f0-9]+\*[a-f0-9]+\*[a-f0-9]+'
-    if not re.match(office_pattern, hash_part):
-        print(f"Office: Invalid format: {hash_part}")
+    """Verify Office hash using hashcat with provided password."""
+    try:
+        # Save hash to temp file
+        with open('/tmp/hash_to_check.txt', 'w') as f:
+            f.write(f"{hash_part}\n")
+            
+        # Create temp password file
+        with open('/tmp/pass_to_check.txt', 'w') as f:
+            f.write(f"{plaintext}\n")
+        
+        # Run hashcat with provided password
+        cmd = ['hashcat', '-m', '9400', '-a', '0', '--potfile-disable', '/tmp/hash_to_check.txt', '/tmp/pass_to_check.txt']
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        
+        # Check if cracked
+        result = subprocess.run(['hashcat', '-m', '9400', '--show', '/tmp/hash_to_check.txt'], 
+                              capture_output=True, text=True)
+        
+        if plaintext in result.stdout:
+            print(f"Office: Verified with hashcat")
+            return True
+        print(f"Office: Verification failed")
         return False
-    print(f"Office: Format validation passed for hash: {hash_part}")
-    return True
+            
+    except Exception as e:
+        print(f"Office verification error: {str(e)}")
+        return False
+    finally:
+        # Cleanup
+        if os.path.exists('/tmp/hash_to_check.txt'):
+            os.remove('/tmp/hash_to_check.txt')
+        if os.path.exists('/tmp/pass_to_check.txt'):
+            os.remove('/tmp/pass_to_check.txt')
 
 def verify_hash_128(hash_part, plaintext):
     """Verify 128-character hashes (Whirlpool or SHA512)."""
