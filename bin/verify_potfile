@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+
+import sys
+from verify_potfile import verify_potfile
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: verify_potfile <potfile_path>")  # Changed to underscore
+        sys.exit(1)
+
+    potfile_path = sys.argv[1]
+    verify_potfile(potfile_path)
